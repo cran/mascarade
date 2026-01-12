@@ -1,0 +1,280 @@
+---
+title: "Using mascarade package"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Using mascarade package}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.width = 7, fig.height=5)
+```
+
+This is a vignette describing usage of `mascarade` to generate masks for clusters
+on 2D dimensional reduction plots like UMAP or t-SNE.
+
+### Package installation
+
+The most recent version of the package can be installed from GitHub:
+
+```{r eval=FALSE}
+remotes::install_github("alserglab/mascarade")
+```
+
+### Loading necessary libraries
+
+```{r}
+library(mascarade)
+library(data.table)
+library(ggplot2)
+library(ggforce)
+```
+
+### Example run
+
+Loading example data from PBMC 3K processed with Seurat (see below for more details).
+
+```{r}
+data("exampleMascarade")
+```
+
+UMAP coordinates:
+
+```{r}
+head(exampleMascarade$dims)
+```
+
+Cluster annotations:
+```{r}
+head(exampleMascarade$clusters)
+```
+
+Expression table for several genes:
+```{r}
+head(exampleMascarade$features)
+```
+
+Let's plot these data:
+
+```{r}
+data <- data.table(exampleMascarade$dims, 
+                   cluster=exampleMascarade$clusters,
+                   exampleMascarade$features)
+ggplot(data, aes(x=UMAP_1, y=UMAP_2)) + 
+    geom_point(aes(color=cluster)) + 
+    coord_fixed() + 
+    theme_classic()
+                               
+```
+
+Now let's generate cluster masks:
+
+```{r}
+maskTable <- generateMask(dims=exampleMascarade$dims, 
+                          clusters=exampleMascarade$clusters)
+```
+
+The `maskTable` is actually a table of cluster borders. 
+A single cluster can have multiple connected parts, and
+one a single part can contain multiple border lines (groups).
+
+```{r}
+head(maskTable)
+```
+
+Now we can use this table to draw the borders with `geom_path` (`group` column should be used as the group aesthetics):
+
+```{r}
+ggplot(data, aes(x=UMAP_1, y=UMAP_2)) + 
+    geom_point(aes(color=cluster)) + 
+    geom_path(data=maskTable, aes(group=group)) +
+    coord_fixed() + 
+    theme_classic()
+```
+
+Or we can color the borders instead of points:
+
+```{r}
+ggplot(data, aes(x=UMAP_1, y=UMAP_2)) + 
+    geom_point(color="grey") + 
+    geom_path(data=maskTable, aes(group=group, color=cluster), linewidth=1) +
+    coord_fixed() + 
+    theme_classic()
+```
+
+We can use `ggforce` package to make the borders touch instead of overlap:
+
+```{r}
+ggplot(data, aes(x=UMAP_1, y=UMAP_2)) + 
+    geom_point(color="grey") + 
+    ggforce::geom_shape(data=maskTable, aes(group=group, color=cluster),
+                        linewidth=1, fill=NA, expand=unit(-1, "pt")) +
+    coord_fixed() + 
+    theme_classic()
+```
+
+In the presence of small clusters it can help to expand the borders a bit further
+away from the points.
+
+```{r}
+maskTable <- generateMask(dims=exampleMascarade$dims, 
+                          clusters=exampleMascarade$clusters,
+                          expand=0.02)
+ggplot(data, aes(x=UMAP_1, y=UMAP_2)) + 
+    geom_point(color="grey") + 
+    ggforce::geom_shape(data=maskTable, aes(group=group, color=cluster),
+                        linewidth=1, fill=NA, expand=unit(-1, "pt")) +
+    coord_fixed() + 
+    theme_classic()
+```
+
+With the help of `ggforce`-based function `geom_mark_shape` we can also put the labels within the plot itself.
+
+
+```{r}
+myMask <- list(
+    geom_mark_shape(data=maskTable, aes(group=cluster, color=cluster, label = cluster),
+                    fill = NA,
+                   linewidth=1, expand=unit(-1, "pt"),
+                   con.cap=0, con.type = "straight",
+                   label.fontsize = 10, label.buffer = unit(0, "cm"),
+                   label.fontface = "plain",
+                   label.minwidth = 0,
+                   label.margin = margin(2, 2, 2, 2, "pt"),
+                   label.lineheight = 0,
+                   con.colour = "inherit",
+                   show.legend = FALSE),
+    # expanding to give a bit more space for labels
+    scale_x_continuous(expand = expansion(mult = 0.1)),
+    scale_y_continuous(expand = expansion(mult = 0.1))
+)
+
+ggplot(data, aes(x=UMAP_1, y=UMAP_2)) +
+    geom_point(color="grey") +
+    myMask +
+    coord_fixed() +
+    theme_classic()
+```
+
+The same can be achived with the `fancyMask()` helper function:
+
+```{r}
+ggplot(data, aes(x=UMAP_1, y=UMAP_2)) +
+    geom_point(color="grey") +
+    fancyMask(maskTable, ratio=1) +
+    theme_classic()
+```
+
+Now we can easily show association between cell types and 
+expression of particular genes, such as GNLY being a good marker
+for NK cells in this dataset.
+
+```{r}
+ggplot(data, aes(x=UMAP_1, y=UMAP_2)) + 
+    geom_point(aes(color=GNLY), size=0.5) +
+    scale_color_gradient2(low = "#404040", high="red") + 
+    fancyMask(maskTable, ratio=1) +
+    theme_classic()
+```
+
+We can focus on a single cluster too:
+
+```{r}
+ggplot(data, aes(x=UMAP_1, y=UMAP_2)) + 
+    geom_point(aes(color=GNLY), size=0.5) + 
+    scale_color_gradient2(low = "#404040", high="red") + 
+    geom_path(data=maskTable[cluster=="NK"], aes(group=group)) +
+    coord_fixed() + 
+    theme_classic()
+```
+
+
+### Working with Seurat
+
+For this part of the vignette you need `Seurat`package. 
+
+```{r message=FALSE}
+library(Seurat)
+```
+
+Let's get the example PBMC3K dataset:
+```{r}
+pbmc3k <- readRDS(url("https://alserglab.wustl.edu/files/mascarade/examples/pbmc3k_seurat5.rds"))
+pbmc3k <- NormalizeData(pbmc3k)
+pbmc3k
+```
+
+The same object can be obtained using `SeuratData` package (can be installed with `remotes::install_github('satijalab/seurat-data')`):
+
+```{r eval=FALSE, message=FALSE, warning=FALSE}
+if (requireNamespace("SeuratData")) {
+    if (!AvailableData()["pbmc3k", "Installed"]) {
+        InstallData("pbmc3k")    
+    }
+    LoadData("pbmc3k")
+    
+    pbmc3k <- UpdateSeuratObject(pbmc3k.final)    
+    pbmc3k
+}
+```
+
+Generate masks using a helper function:
+
+```{r}
+maskTable <- generateMaskSeurat(pbmc3k)
+```
+
+We can use `fancyMask()` now:
+
+```{r seurat-dimplot}
+DimPlot(pbmc3k) + NoLegend() +
+    fancyMask(maskTable, ratio=1)
+```
+
+For the `DimPlot`, the borders can be viewed as redundant and removed:
+
+```{r seurat-dimplot-noborder}
+DimPlot(pbmc3k) + NoLegend() +
+    fancyMask(maskTable, linewidth = 0, ratio=1)
+```
+
+Let's plot an NK cell marker:
+
+```{r seurat-gnly}
+FeaturePlot(pbmc3k, "GNLY", cols=c("grey90", "red")) +
+    fancyMask(maskTable, ratio=1)
+```
+
+Or multiple markers (skipping the labels to save space):
+
+```{r message=FALSE, warning=FALSE}
+featureList <- c("MS4A1", "GNLY", "CD3E", "CD14")
+plots <- FeaturePlot(pbmc3k, features=featureList, cols=c("grey90", "red"), combine = FALSE)
+plots <- lapply(plots, `+`, fancyMask(maskTable, ratio=1, linewidth=0.5, label=FALSE))
+patchwork::wrap_plots(plots)
+```
+
+
+Works with t-SNE too:
+
+```{r message=FALSE, warning=FALSE}
+pbmc3k <- RunTSNE(pbmc3k)
+
+maskTable <- generateMaskSeurat(pbmc3k, reduction = "tsne")
+
+plots <- FeaturePlot(pbmc3k, 
+                     features=featureList,
+                     reduction = "tsne",
+                     cols=c("grey90", "red"),
+                     combine = FALSE)
+plots <- lapply(plots, `+`, fancyMask(maskTable, ratio=1, linewidth=0.5, label=FALSE))
+
+patchwork::wrap_plots(plots)
+```
+
+### Session info
+
+```{r}
+sessionInfo()
+```
