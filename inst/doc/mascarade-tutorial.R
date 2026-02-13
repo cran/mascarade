@@ -2,6 +2,9 @@
 knitr::opts_chunk$set(echo = TRUE, fig.width = 7, fig.height=5)
 
 ## ----eval=FALSE---------------------------------------------------------------
+# install.packages("mascarade")
+
+## ----eval=FALSE---------------------------------------------------------------
 # remotes::install_github("alserglab/mascarade")
 
 ## -----------------------------------------------------------------------------
@@ -99,14 +102,14 @@ ggplot(data, aes(x=UMAP_1, y=UMAP_2)) +
 ## -----------------------------------------------------------------------------
 ggplot(data, aes(x=UMAP_1, y=UMAP_2)) +
     geom_point(color="grey") +
-    fancyMask(maskTable, ratio=1) +
+    fancyMask(maskTable, ratio=1, cols = scales::hue_pal()) +
     theme_classic()
 
 ## -----------------------------------------------------------------------------
 ggplot(data, aes(x=UMAP_1, y=UMAP_2)) + 
     geom_point(aes(color=GNLY), size=0.5) +
     scale_color_gradient2(low = "#404040", high="red") + 
-    fancyMask(maskTable, ratio=1) +
+    fancyMask(maskTable, ratio=1, cols = scales::hue_pal()) +
     theme_classic()
 
 ## -----------------------------------------------------------------------------
@@ -153,23 +156,16 @@ FeaturePlot(pbmc3k, "GNLY", cols=c("grey90", "red")) +
 
 ## ----message=FALSE, warning=FALSE---------------------------------------------
 featureList <- c("MS4A1", "GNLY", "CD3E", "CD14")
-plots <- FeaturePlot(pbmc3k, features=featureList, cols=c("grey90", "red"), combine = FALSE)
-plots <- lapply(plots, `+`, fancyMask(maskTable, ratio=1, linewidth=0.5, label=FALSE))
-patchwork::wrap_plots(plots)
+FeaturePlot(pbmc3k, features=featureList, cols=c("grey90", "red")) *
+    fancyMask(maskTable, ratio=1, linewidth=0.5, label=FALSE, cols = scales::hue_pal())
 
 ## ----message=FALSE, warning=FALSE---------------------------------------------
 pbmc3k <- RunTSNE(pbmc3k)
 
 maskTable <- generateMaskSeurat(pbmc3k, reduction = "tsne")
 
-plots <- FeaturePlot(pbmc3k, 
-                     features=featureList,
-                     reduction = "tsne",
-                     cols=c("grey90", "red"),
-                     combine = FALSE)
-plots <- lapply(plots, `+`, fancyMask(maskTable, ratio=1, linewidth=0.5, label=FALSE))
-
-patchwork::wrap_plots(plots)
+FeaturePlot(pbmc3k, features=featureList, reduction = "tsne", cols=c("grey90", "red")) * 
+    fancyMask(maskTable, ratio=1, linewidth=0.5, label=FALSE, cols = scales::hue_pal())
 
 ## -----------------------------------------------------------------------------
 sessionInfo()
