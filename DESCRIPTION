@@ -2,7 +2,7 @@ Package: mascarade
 Type: Package
 Title: Generating Cluster Masks for Single-Cell Dimensional Reduction
         Plots
-Version: 0.3.1
+Version: 0.3.2
 Authors@R: person("Alexey", "Sergushichev", email = "alsergbox@gmail.com", role = c("aut", "cre"))
 Description: Implements a procedure to automatically generate 2D masks
     for clusters on dimensional reduction plots from methods like 
@@ -23,8 +23,8 @@ VignetteBuilder: knitr
 URL: https://alserglab.github.io/mascarade/
 BugReports: https://github.com/alserglab/mascarade/issues
 NeedsCompilation: no
-Packaged: 2026-02-13 22:54:43 UTC; alserg
+Packaged: 2026-03-06 16:33:07 UTC; runner
 Author: Alexey Sergushichev [aut, cre]
 Maintainer: Alexey Sergushichev <alsergbox@gmail.com>
 Repository: CRAN
-Date/Publication: 2026-02-13 23:30:02 UTC
+Date/Publication: 2026-03-06 17:30:02 UTC
