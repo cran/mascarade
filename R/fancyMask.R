@@ -19,7 +19,11 @@
 #' @param shape.expand Expansion or contraction applied to the marked shapes,
 #'   passed to `geom_mark_shape(expand = ...)`. Default is
 #'   `unit(-linewidth, "pt")`.
-#' @param label Boolean flag wheter the labels should be displayed.
+#' @param label Boolean flag whether the labels should be displayed.
+#' @param label.largest Boolean flag. When `TRUE` (default), only the largest
+#'   part of each cluster is labelled; smaller disconnected parts are drawn but
+#'   not labelled. When `FALSE`, all parts are labelled. Ignored when
+#'   `label = FALSE`.
 #' @param label.fontsize Label font size passed to `geom_mark_shape()`.
 #'   Default is `10`.
 #' @param label.buffer Label buffer distance passed to
@@ -41,6 +45,12 @@
 #'     not matter.
 #' @param label.margin Label margin passed to
 #'   `geom_mark_shape()`. Default is `margin(2, 2, 2, 2, "pt")`.
+#' @param simp_ratio Fraction of the polygon bounding box area used as the
+#'   label-placement simplification threshold. Cluster polygons are simplified
+#'   before the label placement search by removing small concave vertices,
+#'   which reduces computation while guaranteeing the simplified polygon
+#'   encloses the original. Larger values simplify more aggressively;
+#'   set to `0` to disable. Default is `0.001`.
 #'
 #' @return A list of ggplot2 components suitable for adding to a plot with `+`,
 #'   containing a `ggplot2::coord_cartesian()` specification and a
@@ -77,10 +87,12 @@ fancyMask <- function(maskTable,
                       shape.expand=linewidth*unit(-1, "pt"),
                       cols="inherit",
                       label=TRUE,
+                      label.largest=TRUE,
                       label.fontsize = 10,
                       label.buffer = unit(0, "cm"),
                       label.fontface = "plain",
-                      label.margin = margin(2, 2, 2, 2, "pt")
+                      label.margin = margin(2, 2, 2, 2, "pt"),
+                      simp_ratio = 0.001
                       ) {
 
     # Defer color resolution when inheriting from the plot's color scale
@@ -92,10 +104,12 @@ fancyMask <- function(maskTable,
             linewidth = linewidth,
             shape.expand = shape.expand,
             label = label,
+            label.largest = label.largest,
             label.fontsize = label.fontsize,
             label.buffer = label.buffer,
             label.fontface = label.fontface,
-            label.margin = label.margin
+            label.margin = label.margin,
+            simp_ratio = simp_ratio
         )
         return(structure(params, class = "fancyMask"))
     }
@@ -107,10 +121,12 @@ fancyMask <- function(maskTable,
                          shape.expand = shape.expand,
                          cols = cols,
                          label = label,
+                         label.largest = label.largest,
                          label.fontsize = label.fontsize,
                          label.buffer = label.buffer,
                          label.fontface = label.fontface,
-                         label.margin = label.margin)
+                         label.margin = label.margin,
+                         simp_ratio = simp_ratio)
 }
 
 getClusterLevels <- function(x) {
@@ -157,8 +173,9 @@ collectColourData <- function(plot) {
 }
 
 buildFancyMaskLayers <- function(maskTable, ratio, limits.expand, linewidth,
-                                 shape.expand, cols, label, label.fontsize,
-                                 label.buffer, label.fontface, label.margin) {
+                                 shape.expand, cols, label, label.largest,
+                                 label.fontsize, label.buffer, label.fontface,
+                                 label.margin, simp_ratio = 0.001) {
     xvar <- colnames(maskTable)[1]
     yvar <- colnames(maskTable)[2]
 
@@ -169,15 +186,27 @@ buildFancyMaskLayers <- function(maskTable, ratio, limits.expand, linewidth,
 
     clusterLevels <- getClusterLevels(maskTable$cluster)
     pal <- resolveCols(cols, clusterLevels)
-    colors <- pal[maskTable$cluster]
+    # Use as.character() to force name-based lookup regardless of whether
+    # maskTable$cluster is a factor or character vector.
+    colors <- unname(pal[as.character(maskTable$cluster)])
 
     if (label) {
+        # When label.largest=TRUE, only label the first part per cluster
+        # (generateMask guarantees part #1 is the largest by polygon area).
+        if (label.largest) {
+            isLargest <- grepl("#1$",  maskTable$part)
+            labelCol <- ifelse(isLargest, as.character(maskTable$cluster), NA_character_)
+        } else {
+            labelCol <- as.character(maskTable$cluster)
+        }
+        maskTable <- cbind(maskTable, .label_display = labelCol)
+
         shapes <- geom_mark_shape(data=maskTable,
                                  fill = NA,
                                  x=maskTable[[xvar]],
                                  y=maskTable[[yvar]],
                                  aes(group=group,
-                                     label=cluster),
+                                     label=.data$.label_display),
                                  colour=colors,
                                  linewidth=linewidth,
                                  expand=shape.expand,
@@ -185,6 +214,7 @@ buildFancyMaskLayers <- function(maskTable, ratio, limits.expand, linewidth,
                                  label.buffer = label.buffer,
                                  label.fontface = label.fontface,
                                  label.margin = label.margin,
+                                 simp_ratio = simp_ratio,
                                  label.minwidth = 0,
                                  label.lineheight = 0,
                                  con.cap=0,
@@ -262,10 +292,12 @@ ggplot_add.fancyMask <- function(object, plot, ...) {
         shape.expand = object$shape.expand,
         cols = cols,
         label = object$label,
+        label.largest = object$label.largest,
         label.fontsize = object$label.fontsize,
         label.buffer = object$label.buffer,
         label.fontface = object$label.fontface,
-        label.margin = object$label.margin
+        label.margin = object$label.margin,
+        simp_ratio = object$simp_ratio
     )
 
     for (layer in layers) {

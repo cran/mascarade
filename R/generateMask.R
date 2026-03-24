@@ -150,7 +150,7 @@ getRoughMask <- function(partPoints, window, partSigma, pixelSize, crop=TRUE) {
         window <- window[toCrop]
     }
 
-    D <- distmap(partPoints)
+    D <- distmap(partPoints, eps=pixelSize)
     partMaskV <- solutionset(D <= 2*partSigma + 1.5*pixelSize)
     partMaskV <- erosion(partMaskV, r = 2*partSigma, polygonal=F)
     partMask <- as.mask(partMaskV, xy=window)
@@ -162,10 +162,16 @@ getRoughMask <- function(partPoints, window, partSigma, pixelSize, crop=TRUE) {
 getPartDensityClipped <- function(curPoints, part, window, smoothSigma, pixelSize) {
     partPoints <- curPoints[part]
 
+    if (partPoints$n < 2) {
+        return(spatstat.geom::as.im(window) * 0)
+    }
+
+    # TODO: should it be not a geometric mean, but minimum?
     partSigma <- sqrt(bw.nrd(partPoints$x) * bw.nrd(partPoints$y)) * 1.5
     if (!is.na(smoothSigma)) {
         partSigma <- sqrt(partSigma * smoothSigma)
     }
+    partSigma <- max(partSigma, pixelSize)
 
     extPart <- dilation(part, r=2*partSigma)
     partPoints <- curPoints[extPart]
@@ -218,6 +224,8 @@ getPartDensityClipped <- function(curPoints, part, window, smoothSigma, pixelSiz
 #' @returns data.table with points representing the mask borders.
 #'      Each individual border line corresponds to a single level of `group` column.
 #'      Cluster assignment is in `cluster` column.
+#'      Within each cluster, parts are ordered by decreasing polygon area so
+#'      that part index 1 is always the largest disconnected component.
 #' @importFrom data.table rbindlist data.table setnames :=
 #' @importFrom utils head tail
 #' @importFrom stats median bw.nrd
@@ -281,6 +289,11 @@ generateMask <- function(dims, clusters,
         )
     }
 
+    if (length(clusters) != nrow(dims)) {
+        stop("length(clusters) must equal nrow(dims), got ",
+             length(clusters), " and ", nrow(dims), call. = FALSE)
+    }
+
     clusterLevels <- unique(clusters)
 
     dims <- dims[, 1:2]
@@ -304,14 +317,25 @@ generateMask <- function(dims, clusters,
         res
     })
 
+    skippedClusters <- clusterLevels[vapply(clusterLevels, function(cl) {
+        sum(clusters == cl) < 2
+    }, logical(1))]
+
     # getting initial masks
     curMasks <- lapply(seq_along(clusterLevels), function(i) {
         partPoints <- points[clusters == clusterLevels[i]]
 
+        if (partPoints$n < 2) {
+            warning("Cluster ", clusterLevels[i], " has fewer than two points; no mask will be generated.")
+            return(as.mask(emptywindow(window), xy=window))
+        }
+
+        # TODO: should it be not a geometric mean, but minimum?
         partSigma <- sqrt(bw.nrd(partPoints$x) * bw.nrd(partPoints$y)) * 1.5
         if (!is.na(smoothSigma)) {
             partSigma <- sqrt(partSigma * smoothSigma)
         }
+        partSigma <- max(partSigma, pixelSize)
 
         partMask <- getRoughMask(partPoints, window, partSigma, pixelSize)
     })
@@ -373,10 +397,26 @@ generateMask <- function(dims, clusters,
     borderTable <- rbindlist(lapply(seq_along(clusterLevels), function(i) {
         curMask <- curMasks[[i]]
         if (area(curMask) == 0) {
-            warning(sprintf("Mask is empty for cluster %s", clusterLevels[i]))
+            if (!clusterLevels[i] %in% skippedClusters) {
+                warning(sprintf("Mask is empty for cluster %s", clusterLevels[i]))
+            }
             return(NULL)
         }
         curTable <- borderTableFromMask(curMask, crop=FALSE)
+
+        # Sort parts so that part index 1 is always the largest by polygon area.
+        # Each group is a closed polygon (last row == first row); shoelace formula
+        # gives its signed area. Sum absolute areas per part to rank them.
+        groupAreas <- curTable[,
+            .(area = abs(sum(head(x, -1) * tail(y, -1) -
+                             tail(x, -1) * head(y, -1))) / 2),
+            by = .(part, group)
+        ]
+        partAreas <- groupAreas[, .(totalArea = sum(area)), by = part]
+        partAreas <- partAreas[order(-totalArea)]
+        partMap   <- setNames(seq_len(nrow(partAreas)), partAreas$part)
+        curTable[, part := partMap[as.character(part)]]
+
         curTable[, cluster := clusterLevels[i]]
         curTable[, part := paste0(cluster, "#", part)]
         curTable[, group := paste0(part, "#", group)]
