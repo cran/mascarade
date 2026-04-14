@@ -2,7 +2,7 @@ Package: mascarade
 Type: Package
 Title: Generating Cluster Masks for Single-Cell Dimensional Reduction
         Plots
-Version: 0.3.3
+Version: 0.3.4
 Authors@R: person("Alexey", "Sergushichev", email = "alsergbox@gmail.com", role = c("aut", "cre"))
 Description: Implements a procedure to automatically generate 2D masks
     for clusters on dimensional reduction plots from methods like 
@@ -16,15 +16,15 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.3
 Depends: R (>= 3.5)
-Suggests: testthat (>= 3.0.0), rmarkdown, knitr, patchwork, ggnewscale,
-        ggsci, Seurat, scales, SeuratObject
+Suggests: testthat (>= 3.0.0), rmarkdown, knitr, patchwork, ggsci,
+        Seurat, scales, SeuratObject, svglite
 Config/testthat/edition: 3
 VignetteBuilder: knitr
 URL: https://alserglab.github.io/mascarade/
 BugReports: https://github.com/alserglab/mascarade/issues
 NeedsCompilation: no
-Packaged: 2026-03-24 16:52:25 UTC; runner
+Packaged: 2026-04-14 16:34:05 UTC; runner
 Author: Alexey Sergushichev [aut, cre]
 Maintainer: Alexey Sergushichev <alsergbox@gmail.com>
 Repository: CRAN
-Date/Publication: 2026-03-24 17:20:02 UTC
+Date/Publication: 2026-04-14 18:30:02 UTC
