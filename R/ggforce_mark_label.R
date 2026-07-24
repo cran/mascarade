@@ -62,8 +62,7 @@ subset_gp <- function(gp, index, ignore = c('font')) {
 
 
 
-#' @importFrom grid valid.just textGrob nullGrob viewport grobWidth grobHeight
-#' rectGrob gpar grid.layout unit gTree gList grobDescent
+#' @importFrom grid valid.just textGrob nullGrob viewport grobWidth grobHeight rectGrob gpar grid.layout unit gTree gList grobDescent
 labelboxGrob <- function(label, x = unit(0.5, 'npc'), y = unit(0.5, 'npc'),
                          description = NULL, width = NULL, min.width = 50,
                          default.units = 'mm', hjust = 0,
@@ -133,14 +132,33 @@ labelboxGrob <- function(label, x = unit(0.5, 'npc'), y = unit(0.5, 'npc'),
   lab_grob$vp <- viewport(layout.pos.col = 2, layout.pos.row = 2)
   desc_grob$vp <- viewport(layout.pos.col = 2, layout.pos.row = 4)
   gTree(children = gList(bg_grob, lab_grob, desc_grob), vp = vp,
-        cl = 'mark_label')
+        cl = 'mascarade_mark_label')
 }
-#' @importFrom grid widthDetails
-widthDetails.mark_label <- function(x) {
+
+#' Report the label box's width to grid
+#'
+#' The grob's size is fixed by the viewport built in `labelboxGrob()`, so the
+#' natural width is simply that viewport's width.
+#'
+#' @param x A `mascarade_mark_label` grob.
+#' @return The grob's width as a [grid::unit].
+#' @keywords internal
+#' @noRd
+#' @exportS3Method grid::widthDetails
+widthDetails.mascarade_mark_label <- function(x) {
   x$vp$width
 }
-#' @importFrom grid heightDetails
-heightDetails.mark_label <- function(x) {
+
+#' Report the label box's height to grid
+#'
+#' Counterpart of `widthDetails.mascarade_mark_label()`; see there for details.
+#'
+#' @param x A `mascarade_mark_label` grob.
+#' @return The grob's height as a [grid::unit].
+#' @keywords internal
+#' @noRd
+#' @exportS3Method grid::heightDetails
+heightDetails.mascarade_mark_label <- function(x) {
   x$vp$height
 }
 #' Split text into wrap tokens
