@@ -1,6 +1,28 @@
 ## ----setup, include=FALSE-----------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE, fig.width = 7, fig.height=5)
 
+if (!isTRUE(as.logical(Sys.getenv("NOT_CRAN")))) {
+    # on CRAN: return NULL with message
+    readRDS <- function(file) {
+        origin <- if (is.character(file)) {
+            file
+        } else if (inherits(file, "connection")) {
+            tryCatch(summary(file)$description, error = function(e) "connection object")
+        } else {
+            paste(deparse(substitute(file)), collapse = " ")
+        }
+        
+        handler <- function(e) {
+            message("Could not download example data from ", origin,
+                    " (", conditionMessage(e), "). Skipping this example.")
+            NULL
+        }
+        tryCatch({
+            base::readRDS(file)
+        }, error = handler, warning = handler)
+    }
+}
+
 ## ----eval=FALSE---------------------------------------------------------------
 # install.packages("mascarade")
 
@@ -126,6 +148,8 @@ library(Seurat)
 
 ## -----------------------------------------------------------------------------
 pbmc3k <- readRDS(url("https://alserglab.wustl.edu/files/mascarade/examples/pbmc3k_seurat5.rds"))
+
+## ----eval=!is.null(pbmc3k)----------------------------------------------------
 pbmc3k <- NormalizeData(pbmc3k)
 pbmc3k
 
@@ -140,27 +164,27 @@ pbmc3k
 #     pbmc3k
 # }
 
-## -----------------------------------------------------------------------------
+## ----eval=!is.null(pbmc3k)----------------------------------------------------
 maskTable <- generateMaskSeurat(pbmc3k)
 
-## ----seurat-dimplot-----------------------------------------------------------
+## ----seurat-dimplot, eval=!is.null(pbmc3k)------------------------------------
 DimPlot(pbmc3k) + NoLegend() +
     fancyMask(maskTable, ratio=1)
 
-## ----seurat-dimplot-noborder--------------------------------------------------
+## ----seurat-dimplot-noborder, eval=!is.null(pbmc3k)---------------------------
 DimPlot(pbmc3k) + NoLegend() +
     fancyMask(maskTable, linewidth = 0, ratio=1)
 
-## ----seurat-gnly--------------------------------------------------------------
+## ----seurat-gnly, eval=!is.null(pbmc3k)---------------------------------------
 FeaturePlot(pbmc3k, "GNLY", cols=c("grey90", "red")) +
     fancyMask(maskTable, ratio=1)
 
-## ----message=FALSE, warning=FALSE---------------------------------------------
+## ----message=FALSE, warning=FALSE, eval=!is.null(pbmc3k)----------------------
 featureList <- c("MS4A1", "GNLY", "CD3E", "CD14")
 FeaturePlot(pbmc3k, features=featureList, cols=c("grey90", "red")) *
     fancyMask(maskTable, ratio=1, linewidth=0.5, label=FALSE, cols = scales::hue_pal())
 
-## ----message=FALSE, warning=FALSE---------------------------------------------
+## ----message=FALSE, warning=FALSE, eval=!is.null(pbmc3k)----------------------
 pbmc3k <- RunTSNE(pbmc3k)
 
 maskTable <- generateMaskSeurat(pbmc3k, reduction = "tsne")

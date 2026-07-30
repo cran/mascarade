@@ -1,4 +1,4 @@
-4a9dde6e27df1d0c16e8539039b6c9e2 *DESCRIPTION
+0bbb604225e707bcf3bacd9334265fb9 *DESCRIPTION
 9641e4d78b4dc90e022c80b2f766b746 *LICENSE
 0bb0dc34e310814d14edeae93fde44ad *NAMESPACE
 db2d99b5fb4235ef2866c42469a35fd5 *NEWS.md
@@ -16,12 +16,12 @@ d473abd822dc3a79f6a471281ac356fc *R/ggforce_utilities.R
 7959d9160cf60cf7a44488fb4c7bde16 *build/vignette.rds
 f7a4b05777cf4b82189f6b842ffb0d90 *data/exampleMascarade.rda
 19606ec8ffdb1b80805f401cb15c9c6a *data/exampleMaskTable.rda
-5cf01e2cd8f9c5cfc1048c83f4702f9a *inst/doc/mascarade-gallery.R
-afb16977b0c3f919a0b922f3ab796d53 *inst/doc/mascarade-gallery.Rmd
-75d8b55eb56e62a84f487636ad44843f *inst/doc/mascarade-gallery.html
-0db1db440bd30597e899bfc99f1f77aa *inst/doc/mascarade-tutorial.R
-4654198116995c48061972cfd3b14ec0 *inst/doc/mascarade-tutorial.Rmd
-cf28de2296fa83c947b3b7d59dd6de11 *inst/doc/mascarade-tutorial.html
+ad5c17467c20e6716e969093252ac899 *inst/doc/mascarade-gallery.R
+2b30e32d3e4f8c819d6900a1d97ac20a *inst/doc/mascarade-gallery.Rmd
+3e59b06f6a8ac40079676bb025bf60ba *inst/doc/mascarade-gallery.html
+e1eb0985a0d045c20ba4acacc57557b4 *inst/doc/mascarade-tutorial.R
+350d1d24743011a3c7124f39da0438e7 *inst/doc/mascarade-tutorial.Rmd
+695a4502315b1801c5bfc10468952144 *inst/doc/mascarade-tutorial.html
 2b17e0a73c0123c4998b3cde46068493 *man/buildBoxFit.Rd
 762eff24c1ca2920a608ba2348677c02 *man/effectiveLength.Rd
 78ddbaeb323db2e23904e6a7278a010e *man/exampleMascarade.Rd
@@ -62,5 +62,5 @@ f4abd41908bbe2a103792d736218fe13 *tests/testthat/test-fancyMask.R
 d63b928c2d6e8a643bf5159e6306d49b *tests/testthat/test-geom_mark_shape.R
 292e3cf31c9b50e413bc956079741015 *tests/testthat/test-placement.R
 91f767fc33e2e4c9161015b9ba87bed3 *tests/testthat/test-simplify_outer.R
-afb16977b0c3f919a0b922f3ab796d53 *vignettes/mascarade-gallery.Rmd
-4654198116995c48061972cfd3b14ec0 *vignettes/mascarade-tutorial.Rmd
+2b30e32d3e4f8c819d6900a1d97ac20a *vignettes/mascarade-gallery.Rmd
+350d1d24743011a3c7124f39da0438e7 *vignettes/mascarade-tutorial.Rmd

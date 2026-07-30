@@ -1,6 +1,28 @@
 ## ----setup, include=FALSE-----------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE, fig.width = 7, fig.height=5)
 
+if (!isTRUE(as.logical(Sys.getenv("NOT_CRAN")))) {
+    # on CRAN: return NULL with message
+    readRDS <- function(file) {
+        origin <- if (is.character(file)) {
+            file
+        } else if (inherits(file, "connection")) {
+            tryCatch(summary(file)$description, error = function(e) "connection object")
+        } else {
+            paste(deparse(substitute(file)), collapse = " ")
+        }
+        
+        handler <- function(e) {
+            message("Could not download example data from ", origin,
+                    " (", conditionMessage(e), "). Skipping this example.")
+            NULL
+        }
+        tryCatch({
+            base::readRDS(file)
+        }, error = handler, warning = handler)
+    }
+}
+
 ## ----message=FALSE------------------------------------------------------------
 library(mascarade)
 library(data.table)
@@ -9,6 +31,8 @@ library(colorrepel)
 
 ## -----------------------------------------------------------------------------
 example <- readRDS(url("https://alserglab.wustl.edu/files/mascarade/examples/pbmc3k_umap.rds"))
+
+## ----eval=!is.null(example)---------------------------------------------------
 data <- data.table(example$dims, 
                    cluster=example$clusters)
 
@@ -22,7 +46,7 @@ ggplot(data, aes(x=UMAP_1, y=UMAP_2)) +
     theme_classic()
                                
 
-## -----------------------------------------------------------------------------
+## ----eval=!is.null(example)---------------------------------------------------
 ggplot(data, aes(x=UMAP_1, y=UMAP_2)) + 
     geom_point(aes(color=cluster)) + 
     fancyMask(maskTable, ratio=1, linewidth = 0) +
@@ -30,6 +54,8 @@ ggplot(data, aes(x=UMAP_1, y=UMAP_2)) +
 
 ## -----------------------------------------------------------------------------
 example <- readRDS(url("https://alserglab.wustl.edu/files/mascarade/examples/pbmc3k_tsne.rds"))
+
+## ----eval=!is.null(example)---------------------------------------------------
 data <- data.table(example$dims, 
                    cluster=example$clusters)
 
@@ -43,14 +69,16 @@ ggplot(data, aes(x=tSNE_1, y=tSNE_2)) +
     theme_classic()
                                
 
-## -----------------------------------------------------------------------------
+## ----eval=!is.null(example)---------------------------------------------------
 ggplot(data, aes(x=tSNE_1, y=tSNE_2)) + 
     geom_point(aes(color=cluster)) + 
     fancyMask(maskTable, ratio=1, linewidth = 0) +
     theme_classic() + theme(legend.position = "none")
 
-## ----message=FALSE------------------------------------------------------------
+## -----------------------------------------------------------------------------
 example <- readRDS(url("https://alserglab.wustl.edu/files/mascarade/examples/aya.rds"))
+
+## ----eval=!is.null(example), message=FALSE------------------------------------
 data <- data.table(example$dims, 
                    cluster=example$clusters)
 
@@ -65,8 +93,10 @@ ggplot(data, aes(x=UMAP_1, y=UMAP_2)) +
     theme_classic()
                                
 
-## ----message=FALSE------------------------------------------------------------
+## -----------------------------------------------------------------------------
 example <- readRDS(url("https://alserglab.wustl.edu/files/mascarade/examples/chiajung1.rds"))
+
+## ----eval=!is.null(example), message=FALSE------------------------------------
 data <- data.table(example$dims, 
                    cluster=example$clusters)
 
@@ -81,8 +111,10 @@ ggplot(data, aes(x=UMAP_1, y=UMAP_2)) +
     theme_classic()
                                
 
-## ----message=FALSE------------------------------------------------------------
+## -----------------------------------------------------------------------------
 example <- readRDS(url("https://alserglab.wustl.edu/files/mascarade/examples/chiajung2.rds"))
+
+## ----eval=!is.null(example), message=FALSE------------------------------------
 data <- data.table(example$dims, 
                    cluster=example$clusters)
 
@@ -97,8 +129,10 @@ ggplot(data, aes(x=UMAP_1, y=UMAP_2)) +
     theme_classic()
                                
 
-## ----fig.height=7, fig.width=8, message=FALSE---------------------------------
+## -----------------------------------------------------------------------------
 example <- readRDS(url("https://alserglab.wustl.edu/files/mascarade/examples/vshitov.rds"))
+
+## ----eval=!is.null(example), fig.height=7, fig.width=8, message=FALSE---------
 data <- data.table(example$dims, 
                    cluster=example$clusters)
 
